@@ -1,0 +1,1 @@
+- React中使⽤Context实现祖代组件向后代组件跨层级传值。Vue中的provide & inject来源于Context。
