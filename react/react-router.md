@@ -1,0 +1,1 @@
+- 通过context把history、location、BrowserRouter.computeRootMatch对象等相关信息传递下去，Link、Route组件实现，创建历史对象（createBrowserHistory()、createHistory()），通过this.unlistener = this.history.listen(location => { this.setState({location}); })监听变化从而更新页面，返回一个unlistener函数，解除监听执行unlistener函数

@@ -1,0 +1,5 @@
+- 通过高阶组件的方式实现connect Provider，通过context方式传递store
+
+- 利用redux的mapStateToProps 对通过getState()函数的包装返回，利用redux的mapDipatchToProps区分是Object还是Function形式，通过bingActionCreators合并，内部遍历执行每一个dispatch，最终统一合并到props上面返回。
+
+- connect一个高阶组件接收一个组件返回一个新到组件，然后属性里面多了个stateProps和dispatchProps，第一个就是mapStateToProps，第二个就是mapDipatchToProps参数项
