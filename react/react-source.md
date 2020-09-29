@@ -19,3 +19,8 @@
 
 ### requestIdleCallback
 - 获取当前的空闲时候已经回调
+
+- 所有更新会走到enqueueUpdate入栈 scheduleWork任务调度 
+
+### 事件系统
+- react里面做了一个映射表，事件委托方式
