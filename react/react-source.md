@@ -140,11 +140,13 @@ port111111 port2发出的
 
 - beginWork：判断 fiber 有无更新，有更新则进行相应的组件更新，无更新则复制节点
 
-- **非常大的优化**：通常判断子节点的更新是要遍历子树来获取信息的，但 React 非常聪明地在子节点产生更新的时候，设置上 childExpirationTime，并最终在父节点上设置一个优先级最高的 childExpirationTime，这样的话，如果 childExpirationTime 优先级小于 renderExpirationTime 的话，则跳过子树的遍历及更新渲染。
-
 - **workLoop 流程图**：workLoop 循环执行 performUnitOfWork 并赋值给 workInProgress 直到 workInProgress 值为空，则终止循环；当 workInProgress 不为空时，performUnitOfWork()调用 beginWork，从父到子进行组件（节点）更新，调用 completeUnitOfWork 从子到父，根据 effectTag 对节点进行一些处理，beginWork()判断 fiber 有无更新有更新则进行相应对组件更新，无更新则复制节点
 
 ### ComponentUpdate
+
+- React 利用 childExpirationTime，来跳过子树的遍历及渲染，由于 React 的更新是从 FiberRoot 开始的，所以当某一节点发生更新时，React 会向上遍历，直至找到 FiberRoot。在向上遍历的过程中，会顺便找到发生更新节点的父节点，当找到父节点的时候，由于它们的子节点发生了更新，所以会在父节点上设置 childExpirationTime
+
+- **非常大的优化，childExpirationTime 的作用？**：在 React 自上而下更新 fiber 树的时候，每个节点会执行 update 方法，根据 expirationTime 和 childExpirationTime 的优先级大小来判断该节点本身、该节点的子节点是否需要在本次渲染（这一帧）的时候更新。通常判断子节点的更新是要遍历子树来获取信息的，但 React 非常聪明地在子节点产生更新的时候，设置上 childExpirationTime，并最终在父节点上设置一个优先级最高的 childExpirationTime，这样的话，如果 childExpirationTime 优先级小于 renderExpirationTime 的话，则跳过子树的遍历及更新渲染。
 
 ### NodeUpdate
 
