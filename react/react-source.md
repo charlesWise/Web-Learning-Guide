@@ -213,14 +213,92 @@ port111111 port2发出的
 
 - markUpdate：添加 Update 的 EffectTag，添加副作用后，会在 commit 阶段进行真正的更新
 
-- HostComponent：更新DOM节点，DOM 节点的更新，涉及到 virtual dom，节点类型，比如<div>标签对应的 fiber 对象的 type 为 "div"，如果不是第一次渲染的话，更新 DOM 时进行 diff 判断，获取更新队列 workInProgress.updateQueue；如果是第一次渲染的话，如果没有新 props 更新，但是执行到这里的话，可能是 React 内部出现了问题，是否曾是服务端渲染，不是服务端渲染，创建 fiber 实例，即 DOM 实例，添加 EffectTag，方便在 commit 阶段 update
+- HostComponent：更新 DOM 节点，DOM 节点的更新，涉及到 virtual dom，节点类型，比如<div>标签对应的 fiber 对象的 type 为 "div"，如果不是第一次渲染的话，更新 DOM 时进行 diff 判断，获取更新队列 workInProgress.updateQueue；如果是第一次渲染的话，如果没有新 props 更新，但是执行到这里的话，可能是 React 内部出现了问题，是否曾是服务端渲染，不是服务端渲染，创建 fiber 实例，即 DOM 实例，添加 EffectTag，方便在 commit 阶段 update
 
-- updateHostComponent：更新DOM时进行prop diff判断，获取更新队列workInProgress.updateQueue
+- updateHostComponent：更新 DOM 时进行 prop diff 判断，获取更新队列 workInProgress.updateQueue
 
-- prepareUpdate：比较更新得出需要更新的 props 的集合：updatepayload，主要是执行了diffProperties()方法，计算出新老props的差异，也就是prop diff策略
+- prepareUpdate：比较更新得出需要更新的 props 的集合：updatepayload，主要是执行了 diffProperties()方法，计算出新老 props 的差异，也就是 prop diff 策略
 
 ### 错误处理
 
-- 逻辑是当有一个节点 throwError 后，给该节点一个Incomplete的 effectTag，但只有ClassComponent能捕获错误，所以会一层层向上找ClassComponent，并给每个父级添加Incomplete的 effectTag，直到找到ClassComponent后，清空它的子节点（也就是不渲染出项目页面），并再次 throwError，此时React 会调用throwException()，对ClassComponent节点进行处理，逐层渲染出catch error的 ui 页面。
+- 逻辑是当有一个节点 throwError 后，给该节点一个 Incomplete 的 effectTag，但只有 ClassComponent 能捕获错误，所以会一层层向上找 ClassComponent，并给每个父级添加 Incomplete 的 effectTag，直到找到 ClassComponent 后，清空它的子节点（也就是不渲染出项目页面），并再次 throwError，此时 React 会调用 throwException()，对 ClassComponent 节点进行处理，逐层渲染出 catch error 的 ui 页面。
 
 ### Commit 阶段
+
+- nextEffect 是 effect 链上从 firstEffect 到 lastEffect 的每一个需要 commit 的 fiber 对象；当 nextEffect 上有 Snapshot 这个 effectTag 时，执行 commitBeforeMutationEffectOnFiber()，让不同类型的组件执行不同的操作，来提交（commit）相关 effect
+
+- 第一个阶段：在「before mutation(突变)」子阶段上，ClassComponent 会执行 getSnapshotBeforeUpdate()，捕获 DOM 信息；FunctionComponent 会执行 effect.create()/effect.destory()，类似于 componentDidMount()/componentWillUnmount()
+  (1) 不同于 ClassComponent 的 effect 链直接取 fiber.firstEffect—>fiber.firstEffect.next……，
+  FunctionComponent 的 effect 链取的是 fiber.updateQueue.lastEffect—>fiber.updateQueue.lastEffect. next….
+  (2) 循环 FunctionComponent 上的 effect 链，如果 effectTag 是 unmountTag 的话，就执行 effect.destroy()方法，感觉跟 componentWillUnmount()作用类似；如果 effectTag 是 mountTag 的话，就执行 effect.create()方法，感觉跟 componentDidMount()作用类似；
+
+<img width="500" src="./img/01.jpg">
+
+- 第二个阶段：commitMutationEffects()，提交 HostComponent 的 side effect，也就是 DOM 节点的操作(增删改），ReactDOM 里的深度优先遍历
+
+```
+let node = Div1;
+while (true) {
+  //node.child 表示子节点
+  if (node.child !== null) {
+    //return 表示父节点      node.child.return = node;
+    //到子节点      node = node.child;      continue;
+  } //没有子节点时
+  else if (node.child === null) {
+    //当没有兄弟节点时
+    while (node.sibling === null) {
+      //父节点为 null 或者 父节点是 Div1
+      if (node.return === null || node.return === Div1) {
+        // 跳出最外面的while循环
+        return;
+      } //到父节点
+      node = node.return;
+    } //兄弟节点的 return 也是父节点
+    node.sibling.return = node.return;
+    //移到兄弟节点，再次循环
+    node = node.sibling;
+    continue;
+  }
+}
+```
+
+<img width="500" src="./img/02.jpg">
+
+- 看图来遍历下这棵树
+  ① node 表示当前遍历的节点，目前为 Div1
+  ② Div1.child 有值为 Div2（将其赋给 node）
+  ③ Div2.child 有值为 Div3（将其赋给 node）
+  ④ Div3.child 没有值，判断 Div3.sibling 是否有值
+  ⑤ Div3.sibling 有值为 Div4（将其赋给 node），判断 Div4.child 是否有值
+  ⑥ Div4.child 有值为 Div5（将其赋给 node）
+  ⑦ Div5.child 没有值，判断 Div5.sibling 是否有值
+  ⑧ Div5.sibling 没有值，则 Div5.return，返回至父节点 Div4（将其赋给 node），判断 Div4.sibling 是否有值
+  ⑨ Div4.sibling 没有值，则 Div4.return，返回至父节点 Div2（将其赋给 node），判断 Div2.sibling 是否有值
+  ⑩ Div2.sibling 有值为 Div6（将其赋给 node），判断 Div6.child 是否有值
+  ⑪ Div6.child 有值为 Div7（将其赋给 node）
+  ⑫ Div7.child 没有值，判断 Div7.sibling 是否有值
+  ⑬ Div7.sibling 没有值，则 Div7.return，返回至父节点 Div6（将其赋给 node），判断 Div6.sibling 是否有值
+  ⑭ Div6.sibling 没有值，则 Div6.return，返回至父节点 Div1（将其赋给 node），判断 Div1.sibling 是否有值
+  ⑮ Div1.sibling 没有值，并且 Div1.return 为 null，并且 Div1 就是一开始的节点，所以，到此树遍历结束。
+
+  以上就是 ReactDOM 进行插入、更新、删除进行的 fiber 树遍历逻辑
+
+- commitDeletion()：删除 DOM 节点
+
+- 总结通过本文，你需要知道：
+  (1) effectTag & (Placement | Update | Deletion)的意思
+  (2) ReactDOM 里的深度优先遍历算法
+  (3) 查找待插入节点的兄弟节点的位置的方法——getHostSibling()的逻辑
+  (4) commit阶段，进行真实 DOM 节点插入的方法——commitPlacement()的递归逻辑
+
+- 最后阶段：
+  commitUpdateQueue()
+  ① 将capturedUpdate队列放到update队列末尾
+  ② 循环effect链，执行effect上的callback，也就是this.setState({},()=>{})里的callback
+  ③ 清除effect链
+  ④ 循环capturedEffect链，执行componentDidCatch()
+  ⑤ 清除capturedEffect链
+
+- Commit阶段流程图：
+
+<img src="./img/03.jpg">
