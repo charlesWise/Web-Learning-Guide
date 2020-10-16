@@ -219,4 +219,8 @@ port111111 port2发出的
 
 - prepareUpdate：比较更新得出需要更新的 props 的集合：updatepayload，主要是执行了diffProperties()方法，计算出新老props的差异，也就是prop diff策略
 
+### 错误处理
+
+- 逻辑是当有一个节点 throwError 后，给该节点一个Incomplete的 effectTag，但只有ClassComponent能捕获错误，所以会一层层向上找ClassComponent，并给每个父级添加Incomplete的 effectTag，直到找到ClassComponent后，清空它的子节点（也就是不渲染出项目页面），并再次 throwError，此时React 会调用throwException()，对ClassComponent节点进行处理，逐层渲染出catch error的 ui 页面。
+
 ### Commit 阶段
