@@ -11,6 +11,23 @@
 
 - 当初始化三个 useState 时，Hooks 链是通过 next 来绑定三个 state 的顺序的，如果在多次调用 Hooks 时，将某一个 useState 有条件的省略掉，不执行，那么.next 的时候，获取的 state 就不是理想的 state，会造成 state 错位，所以 React 官方已经禁止这样做
 
-#### useState流程图
+#### useState 流程图
 
 <img src="./img/04.jpg">
+
+#### useEffect
+
+```
+mountEffect() >> mountEffectImpl(..., create, deps)
+create:useEffect的第一个参数 callback，deps：useEffect 的第二个可选参数 []
+```
+- (1) 因为 ReactHooks 是给 FunctionComponent 提供副作用的函数，也就是说一定是有一个地方来存放 FunctionComponent 的副作用的，那么在源码里就是componentUpdateQueue链表来存放副作用的
+  (2) 如果FunctionComponent的更新队列不存在，则调用createFunctionComponentUpdateQueue()来创建一个更新队列，并将该useEffect的effect对象放至更新队列队尾
+
+- 综上，可以看到当第一次调用useEffect时，React 做了 3 件事：
+  ① 将当前hook加入workInProgressHook链表中
+  ② 初始化effect对象
+  ③ 将effect对象加入componentUpdateQueue更新队列（FunctionComponent存放副作用的链表）队尾
+  ④ 将effect对象赋值给hook.memoizedState
+
+<img src="./img/05.jpg">
