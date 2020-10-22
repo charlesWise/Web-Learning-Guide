@@ -1,0 +1,1 @@
+- 优化：ownProps(会再次执行mapStateToProps、mapDipatchToProps) component（会再React.createElement函数）
