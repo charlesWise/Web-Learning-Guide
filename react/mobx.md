@@ -1,6 +1,6 @@
 - inject 基于高阶组件
 
-- get 和 set 方法，它们每当对象进行取值或者赋值操作时，都会自动出发，可以看到当发生 get 行为时就会调用 observerManagers 的 collect 来进行数据收集，当发生 set 行为时会调用 obserManagers.trigger 函数来执行其对应的所有监听函数。
+- get 和 set 方法，它们每当对象进行取值或者赋值操作时，都会自动出发，可以看到当发生 get 行为时就会调用 observerManagers 的 collect 来进行数据收集，当发生 set 行为时会调用 obserManagers.trigger 函数来执行其对应的所有监听函数。可以理解成观察者模式。
 
 ```
 let nowObserver = null;
