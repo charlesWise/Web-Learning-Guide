@@ -184,3 +184,21 @@ var mirror_2 = function(node) {
  * 前序遍历当前节点，左子树，右子树
  * 后序遍历左子树，右子树，当前节点
  */
+
+// 非递归方式
+// 前序遍历
+function pre_order(node) {
+  var stack = new Stack()
+  var curr_node = node
+  while(curr_node) {
+    console.log(curr_node.data)
+    if (curr_node.rightChild) {
+      stack.push(curr_node.rightChild)
+    }
+    if(curr_node.leftChild) {
+      curr_node = curr_node.leftChild
+    } else {
+      curr_node = stack.pop()
+    }
+  }
+}
