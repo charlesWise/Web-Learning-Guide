@@ -115,3 +115,8 @@ function BinarySerchTree() {
     return remove_data(root, data)
   }
 }
+
+
+/**
+ * AVL树：平衡因子是0 -1 1
+ */
